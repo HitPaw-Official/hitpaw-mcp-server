@@ -31,3 +31,7 @@ Thumbs.db
 
 # Env
 .env
+
+# Guides
+guide.md
+guide-cn.md
