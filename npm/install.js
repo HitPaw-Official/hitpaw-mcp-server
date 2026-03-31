@@ -14,7 +14,7 @@ const path = require('path');
 const os = require('os');
 
 // ==================== 配置 ====================
-const REPO = 'hitpaw/mcp-server-hitpaw';
+const REPO = 'HitPaw-Official/hitpaw-mcp-server';
 const VERSION = '1.0.0';
 const BASE_URL = `https://github.com/${REPO}/releases/download/v${VERSION}`;
 // =============================================
@@ -132,7 +132,7 @@ async function main() {
     console.error('');
     console.error('或者从源码编译:');
     console.error('  git clone https://github.com/' + REPO);
-    console.error('  cd mcp-server-hitpaw && make build');
+    console.error('  cd hitpaw-mcp-server && make build');
     process.exit(1);
   }
 }

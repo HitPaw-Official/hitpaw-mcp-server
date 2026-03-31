@@ -1,6 +1,6 @@
 {
   "name": "@hitpaw/mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "HitPaw AI Image/Video Enhancement MCP Server for Claude Desktop",
   "keywords": [
     "mcp",
@@ -12,10 +12,10 @@
     "ai",
     "photo-enhancer"
   ],
-  "homepage": "https://github.com/hitpaw/mcp-server-hitpaw",
+  "homepage": "https://github.com/HitPaw-Official/hitpaw-mcp-server",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hitpaw/mcp-server-hitpaw.git"
+    "url": "https://github.com/HitPaw-Official/hitpaw-mcp-server.git"
   },
   "license": "MIT",
   "author": "HitPaw Team",

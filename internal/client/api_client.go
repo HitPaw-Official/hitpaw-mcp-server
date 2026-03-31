@@ -245,7 +245,7 @@ func (c *APIClient) doJSON(method, path string, reqBody interface{}, result inte
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("X-API-KEY", c.apiKey)
+	httpReq.Header.Set("APIKEY", c.apiKey)
 
 	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
