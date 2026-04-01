@@ -1,0 +1,5 @@
+build/
+npm/bin/
+*.exe
+.env
+.DS_Store
