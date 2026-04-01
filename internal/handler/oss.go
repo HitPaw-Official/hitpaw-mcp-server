@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -101,6 +102,53 @@ func (h *Handlers) HandleOSSBatchTransfer(arguments json.RawMessage) *protocol.C
 	}
 
 	return protocol.SuccessResult(sb.String())
+}
+
+// ossUploadArgs OSS 上传参数
+type ossUploadArgs struct {
+	FileData string `json:"file_data"` // Base64 编码的文件内容
+	Filename string `json:"filename"`  // 文件名
+}
+
+// HandleOSSUpload 处理本地文件上传到 OSS
+func (h *Handlers) HandleOSSUpload(arguments json.RawMessage) *protocol.CallToolResult {
+	var args ossUploadArgs
+	if err := json.Unmarshal(arguments, &args); err != nil {
+		return protocol.ErrorResult(fmt.Sprintf("参数解析失败: %v", err))
+	}
+
+	if args.FileData == "" {
+		return protocol.ErrorResult("file_data 为必填参数，请提供Base64编码的文件内容")
+	}
+	if args.Filename == "" {
+		return protocol.ErrorResult("filename 为必填参数，请提供文件名（含扩展名）")
+	}
+
+	// 解码 Base64 数据
+	fileData, err := base64.StdEncoding.DecodeString(args.FileData)
+	if err != nil {
+		return protocol.ErrorResult(fmt.Sprintf("Base64解码失败: %v。请确保 file_data 是有效的Base64编码字符串", err))
+	}
+
+	log.Printf("[OSSUpload] filename=%s, size=%d bytes", args.Filename, len(fileData))
+
+	// 调用 API 上传
+	resp, err := h.api.OSSUploadFile(fileData, args.Filename)
+	if err != nil {
+		log.Printf("[OSSUpload] API error: %v", err)
+		return protocol.ErrorResult(fmt.Sprintf("文件上传失败: %v", err))
+	}
+
+	result := fmt.Sprintf(`文件上传成功！
+
+📋 上传详情：
+- 访问URL: %s
+- 对象Key: %s
+- 文件大小: %s
+
+💡 该URL可直接用于 photo_enhance 的 img_url 或 video_enhance 的 video_url 参数。`, resp.URL, resp.ObjectKey, formatFileSize(resp.Size))
+
+	return protocol.SuccessResult(result)
 }
 
 // formatFileSize 格式化文件大小

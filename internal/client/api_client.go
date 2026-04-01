@@ -198,7 +198,6 @@ func (c *APIClient) OSSUploadFile(fileData []byte, filename string) (*OSSUploadR
 		return nil, fmt.Errorf("create request failed: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
-	httpReq.Header.Set("X-API-KEY", c.apiKey)
 
 	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {

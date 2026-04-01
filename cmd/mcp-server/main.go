@@ -22,13 +22,15 @@ const (
 3. task_status - 查询任务处理状态和结果
 4. oss_transfer - 文件URL转存到OSS
 5. oss_batch_transfer - 批量文件URL转存
-6. list_photo_models - 查看图片增强全部18个模型详情
-7. list_video_models - 查看视频增强全部8个模型详情
+6. oss_upload - 上传本地文件到OSS（Base64编码），获取URL后可用于增强
+7. list_photo_models - 查看图片增强全部18个模型详情
+8. list_video_models - 查看视频增强全部8个模型详情
 
 标准使用流程：
 1. 用户描述需求 → 根据 photo_enhance 工具描述中的决策树自动选择最佳模型
-2. 调用 photo_enhance 或 video_enhance 创建任务 → 获得 job_id
-3. 调用 task_status 查询结果 → 获得结果URL
+2. 如果用户提供本地文件 → 先用 oss_upload 上传获取URL
+3. 调用 photo_enhance 或 video_enhance 创建任务 → 获得 job_id
+4. 调用 task_status 查询结果 → 获得结果URL
 
 图片模型快速选择（详情见 photo_enhance 工具描述）：
 - 含人脸 + 美颜 → face_2x/face_4x
@@ -63,7 +65,7 @@ func main() {
 	// 注册所有工具
 	handler.RegisterAllTools(server, apiClient)
 
-	log.Println("[Main] 所有工具已注册（7个工具，18个图片模型，8个视频模型），等待客户端连接...")
+	log.Println("[Main] 所有工具已注册（8个工具，18个图片模型，8个视频模型），等待客户端连接...")
 
 	// 启动 MCP Server
 	if err := server.Run(); err != nil {

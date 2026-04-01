@@ -14,6 +14,7 @@ func RegisterAllTools(server *protocol.MCPServer, apiClient *client.APIClient) {
 	server.RegisterTool(taskStatusTool(), h.HandleTaskStatus)
 	server.RegisterTool(ossTransferTool(), h.HandleOSSTransfer)
 	server.RegisterTool(ossBatchTransferTool(), h.HandleOSSBatchTransfer)
+	server.RegisterTool(ossUploadTool(), h.HandleOSSUpload)
 	server.RegisterTool(listPhotoModelsTool(), h.HandleListPhotoModels)
 	server.RegisterTool(listVideoModelsTool(), h.HandleListVideoModels)
 }
@@ -229,7 +230,7 @@ func taskStatusTool() protocol.Tool {
 
 func ossTransferTool() protocol.Tool {
 	return protocol.Tool{
-		Name: "oss_transfer",
+		Name:        "oss_transfer",
 		Description: "将远程URL文件转存到OSS存储，返回稳定的访问URL。适用于将外部图片/视频URL转存为持久链接。",
 		InputSchema: protocol.InputSchema{
 			Type: "object",
@@ -250,7 +251,7 @@ func ossTransferTool() protocol.Tool {
 
 func ossBatchTransferTool() protocol.Tool {
 	return protocol.Tool{
-		Name: "oss_batch_transfer",
+		Name:        "oss_batch_transfer",
 		Description: "批量将远程URL文件转存到OSS存储，最多20个URL。",
 		InputSchema: protocol.InputSchema{
 			Type: "object",
@@ -265,9 +266,34 @@ func ossBatchTransferTool() protocol.Tool {
 	}
 }
 
+func ossUploadTool() protocol.Tool {
+	return protocol.Tool{
+		Name: "oss_upload",
+		Description: `上传本地文件到OSS存储，返回可访问的URL。适用于将本地图片/视频文件上传到OSS，获取URL后可用于 photo_enhance 或 video_enhance。
+
+使用场景：
+- 用户提供了本地文件（base64编码），需要先上传到OSS获取URL
+- 上传后返回的URL可直接作为 photo_enhance 的 img_url 或 video_enhance 的 video_url 使用`,
+		InputSchema: protocol.InputSchema{
+			Type: "object",
+			Properties: map[string]protocol.PropertySchema{
+				"file_data": {
+					Type:        "string",
+					Description: "文件内容的Base64编码字符串（必填）",
+				},
+				"filename": {
+					Type:        "string",
+					Description: "文件名（必填），包含扩展名，例如 'photo.jpg'、'video.mp4'",
+				},
+			},
+			Required: []string{"file_data", "filename"},
+		},
+	}
+}
+
 func listPhotoModelsTool() protocol.Tool {
 	return protocol.Tool{
-		Name: "list_photo_models",
+		Name:        "list_photo_models",
 		Description: "列出所有18个图片增强模型的详细信息，包括适用场景、触发条件、放大倍数。帮助选择最合适的模型。",
 		InputSchema: protocol.InputSchema{
 			Type:       "object",
@@ -278,7 +304,7 @@ func listPhotoModelsTool() protocol.Tool {
 
 func listVideoModelsTool() protocol.Tool {
 	return protocol.Tool{
-		Name: "list_video_models",
+		Name:        "list_video_models",
 		Description: "列出所有8个视频增强模型的详细信息，包括适用场景、支持分辨率。",
 		InputSchema: protocol.InputSchema{
 			Type:       "object",
