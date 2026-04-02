@@ -15,7 +15,7 @@ const os = require('os');
 
 // ==================== 配置 ====================
 const REPO = 'HitPaw-Official/hitpaw-mcp-server';
-const VERSION = '1.0.3';
+const VERSION = '1.0.4';
 const BASE_URL = `https://github.com/${REPO}/releases/download/v${VERSION}`;
 // =============================================
 

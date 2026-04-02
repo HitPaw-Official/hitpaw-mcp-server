@@ -211,7 +211,7 @@ func (c *APIClient) OSSUploadFile(fileData []byte, filename string) (*OSSUploadR
 		return nil, fmt.Errorf("parse response failed: %w, body: %s", err, string(respBody))
 	}
 
-	if apiResp.Code != 0 {
+	if apiResp.Code != 200 {
 		return nil, fmt.Errorf("API error: code=%d, msg=%s", apiResp.Code, apiResp.Msg)
 	}
 
@@ -269,7 +269,7 @@ func (c *APIClient) doJSON(method, path string, reqBody interface{}, result inte
 		return fmt.Errorf("parse response failed: %w, body: %s", err, string(respBody))
 	}
 
-	if apiResp.Code != 0 {
+	if apiResp.Code != 200 {
 		return fmt.Errorf("API error: code=%d, msg=%s", apiResp.Code, apiResp.Msg)
 	}
 
