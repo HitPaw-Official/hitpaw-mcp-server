@@ -10,7 +10,7 @@ import (
 // HandleListPhotoModels 列出所有图片增强模型
 func (h *Handlers) HandleListPhotoModels(_ json.RawMessage) *protocol.CallToolResult {
 	var sb strings.Builder
-	sb.WriteString("📸 图片增强可用模型列表（共18个）\n")
+	sb.WriteString("📸 图片增强可用模型列表（共20个）\n")
 	sb.WriteString("═══════════════════════════════════════\n\n")
 
 	sb.WriteString("👤 人像清晰模型（柔和美颜效果）\n")
@@ -81,6 +81,14 @@ func (h *Handlers) HandleListPhotoModels(_ json.RawMessage) *protocol.CallToolRe
 	sb.WriteString("    放大: 2x | 同上+2倍放大\n\n")
 	sb.WriteString("  generative_4x\n")
 	sb.WriteString("    放大: 4x | 同上+4倍放大\n\n")
+	sb.WriteString("  generative_6x  ⭐ 新增\n")
+	sb.WriteString("    放大: 6x | SD生成式6倍放大\n")
+	sb.WriteString("    触发: 用户明确要求\"6倍放大\"（仅此模型支持6x）\n")
+	sb.WriteString("    注意: SD输出上限34MP，请控制输入分辨率\n\n")
+	sb.WriteString("  generative_8x  ⭐ 新增\n")
+	sb.WriteString("    放大: 8x | SD生成式8倍放大\n")
+	sb.WriteString("    触发: 用户明确要求\"8倍放大/极致放大\"（仅此模型支持8x）\n")
+	sb.WriteString("    注意: SD输出上限34MP，请控制输入分辨率\n\n")
 
 	sb.WriteString("⚡ 生成式快速模型（SD，效率优先）\n")
 	sb.WriteString("───────────────────────────────────────\n")
@@ -95,7 +103,11 @@ func (h *Handlers) HandleListPhotoModels(_ json.RawMessage) *protocol.CallToolRe
 	sb.WriteString("📌 限制信息：\n")
 	sb.WriteString("  最大输入: 67MP | 最大输出: 432MP(非SD) / 34MP(SD)\n")
 	sb.WriteString("  输入格式: .jpg .png .webp .bmp .tif .heic 等\n")
-	sb.WriteString("  输出格式: .jpg .png .webp .bmp .tif 等\n")
+	sb.WriteString("  输出格式: .jpg .png .webp .bmp .tif 等\n\n")
+	sb.WriteString("⚠️ 6x/8x 高倍放大说明：\n")
+	sb.WriteString("  - 仅 generative_6x、generative_8x 两个模型支持\n")
+	sb.WriteString("  - 其他模型系列（face/face_v2/general/high_fidelity）最高支持 4x\n")
+	sb.WriteString("  - 6x/8x 为 SD 模型，输出上限 34MP，请注意输入图片尺寸\n")
 
 	return protocol.SuccessResult(sb.String())
 }

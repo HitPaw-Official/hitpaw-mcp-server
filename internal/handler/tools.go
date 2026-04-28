@@ -11,6 +11,7 @@ func RegisterAllTools(server *protocol.MCPServer, apiClient *client.APIClient) {
 
 	server.RegisterTool(photoEnhanceTool(), h.HandlePhotoEnhance)
 	server.RegisterTool(videoEnhanceTool(), h.HandleVideoEnhance)
+	server.RegisterTool(imageSegmentationTool(), h.HandleImageSegmentation)
 	server.RegisterTool(taskStatusTool(), h.HandleTaskStatus)
 	server.RegisterTool(ossTransferTool(), h.HandleOSSTransfer)
 	server.RegisterTool(ossBatchTransferTool(), h.HandleOSSBatchTransfer)
@@ -28,7 +29,7 @@ type Handlers struct {
 
 func photoEnhanceTool() protocol.Tool {
 	minUpscale := float64(1)
-	maxUpscale := float64(4)
+	maxUpscale := float64(8)
 	return protocol.Tool{
 		Name: "photo_enhance",
 		Description: `图片增强/超分辨率工具 - 提升图片清晰度和分辨率。返回 job_id 用于查询任务状态。
@@ -61,13 +62,19 @@ func photoEnhanceTool() protocol.Tool {
 │   │   └── 4倍 → generative_enhance_fast_4x
 │   ├── 不放大 → generative_1x
 │   ├── 2倍放大 → generative_2x
-│   └── 4倍放大 → generative_4x
+│   ├── 4倍放大 → generative_4x
+│   ├── 6倍放大（极致放大需求）→ generative_6x
+│   └── 8倍放大（极致放大需求）→ generative_8x
 ├── "高保真/保留风格/摄影作品/艺术照"
 │   ├── 2倍放大 → high_fidelity_2x
 │   └── 4倍放大 → high_fidelity_4x
 └── 常规清晰化/画质提升（默认）
     ├── 2倍放大或未指定 → general_2x
     └── 4倍放大 → general_4x
+
+⚠️ 重要：6x/8x 仅有 generative_6x / generative_8x 两个模型（生成式SD）。
+   如用户需要 6倍/8倍 放大，只能使用这两个模型。
+   其他模型系列（face/face_v2/general/high_fidelity）目前最高支持 4x。
 
 ━━━ 各模型详细说明 ━━━
 
@@ -100,6 +107,8 @@ func photoEnhanceTool() protocol.Tool {
 - generative_1x: Diffusion通用增强，不放大。锐利化生成，适合极模糊/压缩图。
 - generative_2x: 同上+2倍放大。
 - generative_4x: 同上+4倍放大。
+- generative_6x: 同上+6倍放大。⚠️ 仅当用户明确需要6倍放大时使用，注意输入分辨率不能过大（输出 ≤ 34MP）。
+- generative_8x: 同上+8倍放大。⚠️ 仅当用户明确需要8倍放大时使用，注意输入分辨率不能过大（输出 ≤ 34MP）。
 
 【生成式快速系列 - SD模型，效率优先】
 - generative_enhance_fast_2x: SD快速生成2倍放大。效率优先，质量略低于generative_2x。仅当用户提"快速/效率优先"时使用。
@@ -108,7 +117,8 @@ func photoEnhanceTool() protocol.Tool {
 ━━━ 输入输出限制 ━━━
 - 最大输入: 67MP | 最大输出: 432MP(非SD) / 34MP(SD)
 - 输入格式: .jpg .jpeg .png .webp .bmp .tif .tiff .heic .heif
-- 输出格式: .jpg .jpeg .png .webp .bmp .tif .tiff`,
+- 输出格式: .jpg .jpeg .png .webp .bmp .tif .tiff
+- 6x/8x 为 SD 模型，输出上限 34MP，请控制输入图片尺寸`,
 		InputSchema: protocol.InputSchema{
 			Type: "object",
 			Properties: map[string]protocol.PropertySchema{
@@ -116,8 +126,9 @@ func photoEnhanceTool() protocol.Tool {
 					Type: "string",
 					Description: `增强模型名称（必填）。请根据上方决策树严格选择。
 人像: face_2x, face_4x, face_v2_2x, face_v2_4x, generative_portrait_1x/2x/4x
-通用: general_2x, general_4x, high_fidelity_2x/4x, generative_1x/2x/4x, generative_enhance_fast_2x/4x
-降噪: sharpen_denoise_1x, detail_denoise_1x`,
+通用: general_2x, general_4x, high_fidelity_2x/4x, generative_1x/2x/4x/6x/8x, generative_enhance_fast_2x/4x
+降噪: sharpen_denoise_1x, detail_denoise_1x
+注意: 6x/8x 仅 generative_6x、generative_8x 可用`,
 					Enum: []string{
 						"face_2x", "face_4x",
 						"face_v2_2x", "face_v2_4x",
@@ -125,7 +136,7 @@ func photoEnhanceTool() protocol.Tool {
 						"high_fidelity_2x", "high_fidelity_4x",
 						"sharpen_denoise_1x", "detail_denoise_1x",
 						"generative_portrait_1x", "generative_portrait_2x", "generative_portrait_4x",
-						"generative_1x", "generative_2x", "generative_4x",
+						"generative_1x", "generative_2x", "generative_4x", "generative_6x", "generative_8x",
 						"generative_enhance_fast_2x", "generative_enhance_fast_4x",
 					},
 				},
@@ -141,7 +152,7 @@ func photoEnhanceTool() protocol.Tool {
 				},
 				"upscale": {
 					Type:        "integer",
-					Description: "放大倍数（1-4）。每个模型有固定倍数（名称后缀1x/2x/4x），通常不需要手动设置",
+					Description: "放大倍数（1-8）。每个模型有固定倍数（名称后缀1x/2x/4x/6x/8x），通常不需要手动设置",
 					Minimum:     &minUpscale,
 					Maximum:     &maxUpscale,
 				},
@@ -209,18 +220,77 @@ func videoEnhanceTool() protocol.Tool {
 	}
 }
 
+func imageSegmentationTool() protocol.Tool {
+	return protocol.Tool{
+		Name: "image_segmentation",
+		Description: `AI图像分割工具（抠图）- 自动识别图像主体并与背景分离，生成透明背景图。返回 job_id 用于查询任务状态。
+
+━━━ 使用场景 ━━━
+✅ 用户提出 "抠图/去背景/分离主体/透明背景/换背景" 等需求
+✅ 用户需要把图片里的主体（人像/物品/动物）从背景中分离出来
+✅ 用户提到 "保留主体/背景透明/PNG透明图/白底/透明底" 等关键词
+✅ 关键词: 抠图, 去背景, 背景透明, 分离主体, 透明底, PNG, 主体提取
+
+❌ 不要用于以下场景：
+- 需要放大/清晰化/修复图片 → 使用 photo_enhance
+- 需要生成/编辑图片内容 → 使用对应的图片编辑工具
+- 非图片格式的文件处理 → 使用其他文件处理工具
+
+━━━ 能力说明 ━━━
+- 自动识别图像主体，分离主体与背景，生成透明背景图
+- 支持返回多种结果格式：透明背景图、mask掩码图、全部结果
+- 支持公网图片URL输入（如需上传本地文件，请先用 oss_upload 获取URL）
+
+━━━ return_type 参数说明 ━━━
+- matted (默认): 仅返回透明背景的抠图结果
+- mask: 仅返回主体的 mask 掩码图（黑白二值图）
+- all: 同时返回透明背景图、mask图和缩略图
+
+━━━ 处理流程 ━━━
+1. 调用本工具创建任务 → 获得 job_id
+2. 异步处理，需通过 task_status 工具轮询查询结果
+3. 完成后返回 res_url（透明背景图）、mask_url（掩码图，return_type=mask/all 时有值）
+
+━━━ 限制 ━━━
+- 异步处理，不支持实时同步返回
+- 单次任务扣除积分（具体扣费以接口返回为准）
+- 输出URL有效期 24 小时`,
+		InputSchema: protocol.InputSchema{
+			Type: "object",
+			Properties: map[string]protocol.PropertySchema{
+				"file_url": {
+					Type:        "string",
+					Description: "待抠图的图片URL地址（必填）。如果是本地文件，请先使用 oss_upload 工具上传获取URL",
+				},
+				"return_type": {
+					Type:        "string",
+					Description: "返回结果类型。matted=仅透明背景图（默认），mask=仅mask掩码图，all=透明背景图+mask图+缩略图",
+					Enum:        []string{"matted", "mask", "all"},
+					Default:     "matted",
+				},
+			},
+			Required: []string{"file_url"},
+		},
+	}
+}
+
 func taskStatusTool() protocol.Tool {
 	return protocol.Tool{
 		Name: "task_status",
-		Description: `查询图片/视频增强任务的处理状态。
+		Description: `查询图片/视频/抠图任务的处理状态。
 状态: WAITING/PENDING(等待) → INPUT_PREPARING(下载) → CONVERTING(处理中) → COMPLETED(完成,含结果URL)
-异常: ERROR/ERROR_INTERRUPTION/TIMEOUT(失败) | NSFW(不合规) | CANCEL(取消)`,
+异常: ERROR/ERROR_INTERRUPTION/TIMEOUT(失败) | NSFW(不合规) | CANCEL(取消)
+
+返回字段说明：
+- res_url: 结果文件URL（增强图片/视频URL，或抠图后的透明背景图）
+- mask_url: 抠图任务专属，主体mask掩码图URL（仅图像分割任务返回，其他任务为空）
+- original_url: 原始输入文件URL`,
 		InputSchema: protocol.InputSchema{
 			Type: "object",
 			Properties: map[string]protocol.PropertySchema{
 				"job_id": {
 					Type:        "string",
-					Description: "任务ID（必填），由 photo_enhance 或 video_enhance 返回",
+					Description: "任务ID（必填），由 photo_enhance / video_enhance / image_segmentation 返回",
 				},
 			},
 			Required: []string{"job_id"},
@@ -269,11 +339,11 @@ func ossBatchTransferTool() protocol.Tool {
 func ossUploadTool() protocol.Tool {
 	return protocol.Tool{
 		Name: "oss_upload",
-		Description: `上传本地文件到OSS存储，返回可访问的URL。适用于将本地图片/视频文件上传到OSS，获取URL后可用于 photo_enhance 或 video_enhance。
+		Description: `上传本地文件到OSS存储，返回可访问的URL。适用于将本地图片/视频文件上传到OSS，获取URL后可用于 photo_enhance / video_enhance / image_segmentation。
 
 使用场景：
 - 用户提供了本地文件（base64编码），需要先上传到OSS获取URL
-- 上传后返回的URL可直接作为 photo_enhance 的 img_url 或 video_enhance 的 video_url 使用`,
+- 上传后返回的URL可直接作为 photo_enhance 的 img_url、video_enhance 的 video_url、image_segmentation 的 file_url 使用`,
 		InputSchema: protocol.InputSchema{
 			Type: "object",
 			Properties: map[string]protocol.PropertySchema{
@@ -294,7 +364,7 @@ func ossUploadTool() protocol.Tool {
 func listPhotoModelsTool() protocol.Tool {
 	return protocol.Tool{
 		Name:        "list_photo_models",
-		Description: "列出所有18个图片增强模型的详细信息，包括适用场景、触发条件、放大倍数。帮助选择最合适的模型。",
+		Description: "列出所有20个图片增强模型的详细信息，包括适用场景、触发条件、放大倍数。帮助选择最合适的模型。",
 		InputSchema: protocol.InputSchema{
 			Type:       "object",
 			Properties: map[string]protocol.PropertySchema{},

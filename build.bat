@@ -2,7 +2,7 @@
 chcp 65001 >nul
 setlocal
 
-set VERSION=1.0.4
+set VERSION=1.1.1
 set BINARY_NAME=hitpaw-mcp-server
 set BUILD_DIR=build
 set LDFLAGS=-s -w -X main.serverVersion=%VERSION%

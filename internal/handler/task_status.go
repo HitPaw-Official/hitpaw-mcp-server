@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hitpaw/mcp-server-hitpaw/internal/protocol"
 )
@@ -38,15 +39,25 @@ func (h *Handlers) HandleTaskStatus(arguments json.RawMessage) *protocol.CallToo
 
 	switch resp.Status {
 	case "COMPLETED":
-		result = fmt.Sprintf(`%s 任务处理完成！
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("%s 任务处理完成！\n\n📋 任务详情：\n", statusIcon))
+		sb.WriteString(fmt.Sprintf("- 任务ID: %s\n", resp.JobID))
+		sb.WriteString(fmt.Sprintf("- 状态: %s (已完成)\n", resp.Status))
+		sb.WriteString(fmt.Sprintf("- 结果文件: %s\n", resp.ResURL))
 
-📋 任务详情：
-- 任务ID: %s
-- 状态: %s (已完成)
-- 结果文件: %s
-- 原始文件: %s
+		// 抠图任务返回的 mask_url（仅图像分割任务有值）
+		if resp.MaskURL != "" {
+			sb.WriteString(fmt.Sprintf("- 掩码图(Mask): %s\n", resp.MaskURL))
+		}
 
-✅ 您可以通过结果文件URL下载处理后的文件。`, statusIcon, resp.JobID, resp.Status, resp.ResURL, resp.OriginalURL)
+		sb.WriteString(fmt.Sprintf("- 原始文件: %s\n\n", resp.OriginalURL))
+		sb.WriteString("✅ 您可以通过结果文件URL下载处理后的文件。")
+
+		if resp.MaskURL != "" {
+			sb.WriteString("\n💡 抠图任务额外提供了 mask 掩码图，可用于精确控制主体区域。")
+		}
+
+		result = sb.String()
 
 	case "ERROR", "ERROR_INTERRUPTION", "TIMEOUT":
 		result = fmt.Sprintf(`%s 任务处理失败

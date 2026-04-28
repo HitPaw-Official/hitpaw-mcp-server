@@ -29,7 +29,7 @@ func NewAPIClient(baseURL, apiKey string) *APIClient {
 	}
 }
 
-// ==================== 请求/响应结构体（对应你现有 API） ====================
+// ==================== 请求/响应结构体 ====================
 
 // APIResponse 通用 API 响应
 type APIResponse struct {
@@ -71,6 +71,18 @@ type VideoEnhancerResponse struct {
 	ConsumeCoins int64  `json:"consume_coins"`
 }
 
+// ImageSegmentationRequest 图像分割（抠图）请求
+type ImageSegmentationRequest struct {
+	FileURL    string `json:"file_url"`
+	ReturnType string `json:"return_type,omitempty"`
+}
+
+// ImageSegmentationResponse 图像分割响应（与 PhotoEnhancerResponse 同结构）
+type ImageSegmentationResponse struct {
+	JobID        string `json:"job_id"`
+	ConsumeCoins int64  `json:"consume_coins"`
+}
+
 // TaskStatusRequest 任务状态请求
 type TaskStatusRequest struct {
 	JobID string `json:"job_id"`
@@ -82,6 +94,7 @@ type TaskStatusResponse struct {
 	Status      string `json:"status"`
 	ResURL      string `json:"res_url"`
 	OriginalURL string `json:"original_url"`
+	MaskURL     string `json:"mask_url"` // 图像分割任务专属
 }
 
 // OSSTransferRequest OSS 转存请求
@@ -148,6 +161,16 @@ func (c *APIClient) VideoEnhance(req *VideoEnhancerRequest) (*VideoEnhancerRespo
 	return &resp, nil
 }
 
+// ImageSegmentation 调用图像分割（抠图）接口
+func (c *APIClient) ImageSegmentation(req *ImageSegmentationRequest) (*ImageSegmentationResponse, error) {
+	var resp ImageSegmentationResponse
+	err := c.doJSON("POST", "/api/image-segmentation", req, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // TaskStatus 查询任务状态
 func (c *APIClient) TaskStatus(jobID string) (*TaskStatusResponse, error) {
 	var resp TaskStatusResponse
@@ -198,6 +221,9 @@ func (c *APIClient) OSSUploadFile(fileData []byte, filename string) (*OSSUploadR
 		return nil, fmt.Errorf("create request failed: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
+	httpReq.Header.Set("APIKEY", c.apiKey)
+
+	log.Printf("[APIClient] POST /api/oss/upload filename=%s size=%d", filename, len(fileData))
 
 	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -206,6 +232,13 @@ func (c *APIClient) OSSUploadFile(fileData []byte, filename string) (*OSSUploadR
 	defer httpResp.Body.Close()
 
 	respBody, _ := io.ReadAll(httpResp.Body)
+
+	log.Printf("[APIClient] Response status=%d body=%s", httpResp.StatusCode, string(respBody))
+
+	if httpResp.StatusCode >= 400 {
+		return nil, fmt.Errorf("HTTP %d: %s", httpResp.StatusCode, string(respBody))
+	}
+
 	var apiResp APIResponse
 	if err := json.Unmarshal(respBody, &apiResp); err != nil {
 		return nil, fmt.Errorf("parse response failed: %w, body: %s", err, string(respBody))
