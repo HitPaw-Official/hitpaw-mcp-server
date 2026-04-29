@@ -1,6 +1,6 @@
 {
   "name": "@hitpaw/mcp-server",
-  "version": "1.0.4",
+  "version": "1.1.1",
   "description": "HitPaw AI Image/Video Enhancement MCP Server for Claude Desktop",
   "keywords": [
     "mcp",
